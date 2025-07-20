@@ -1,11 +1,9 @@
 import mongoengine as me
 from datetime import datetime, timezone
 
-
-# CustomUser mimicking Django's default User model with roles
 class CustomUser(me.Document):
-    username = me.StringField(max_length=150, unique=True, required=True)
-    email = me.StringField(max_length=254, required=False)
+    username = me.StringField(max_length=150, required=True, unique=True)
+    email = me.StringField(max_length=254, required=False, unique=True)
     is_active = me.BooleanField(default=True)
     is_staff = me.BooleanField(default=False)
     is_superuser = me.BooleanField(default=False)
@@ -17,9 +15,19 @@ class CustomUser(me.Document):
 
     meta = {
         'collection': 'users',
-        'indexes': ['username', 'email']
+        'indexes': [
+            {
+                'fields': ['username'],
+                'unique': True,
+                'name': 'unique_username_index'
+            },
+            {
+                'fields': ['email'],
+                'unique': True,
+                'name': 'unique_email_index'
+            }
+        ]
     }
-
 
 class FolderType(me.Document):
     type_name = me.StringField(max_length=50, required=True)
@@ -31,7 +39,6 @@ class FolderType(me.Document):
         'collection': 'folder_types',
         'indexes': ['type_name']
     }
-
 
 class Folder(me.Document):
     name = me.StringField(max_length=50, required=True)
@@ -47,8 +54,6 @@ class Folder(me.Document):
         'indexes': ['folder_owner', 'folder_type', 'create_date']
     }
 
-
-# Embedded Document for FormStructureColumn
 class FormStructureColumn(me.EmbeddedDocument):
     key_name = me.StringField(max_length=50, required=True)
     title = me.StringField(max_length=50, required=True)
@@ -58,15 +63,12 @@ class FormStructureColumn(me.EmbeddedDocument):
     def __str__(self):
         return self.title
 
-
-# Embedded Document for FormStructureSpecifications
 class FormStructureSpecifications(me.EmbeddedDocument):
     name = me.StringField(max_length=50, required=True)
     content = me.StringField(max_length=50, required=True)
 
     def __str__(self):
         return self.name
-
 
 class FormStructure(me.Document):
     structure_name = me.StringField(max_length=50, required=True)
@@ -84,7 +86,6 @@ class FormStructure(me.Document):
         'indexes': ['folder', 'create_date']
     }
 
-
 class Form(me.Document):
     form_structure = me.ReferenceField(FormStructure, required=True)
     user = me.ReferenceField(CustomUser, required=True)
@@ -99,7 +100,6 @@ class Form(me.Document):
         'indexes': ['form_structure', 'user', 'create_date']
     }
 
-
 class FormRecord(me.Document):
     form = me.ReferenceField(Form, required=True)
     create_date = me.DateTimeField(default=lambda: datetime.now(timezone.utc))
@@ -113,10 +113,10 @@ class FormRecord(me.Document):
         'indexes': ['form', 'user', 'create_date']
     }
 
-
 class FormRecordCell(me.Document):
     form_record = me.ReferenceField(FormRecord, required=True)
-    form_structure_column = me.ReferenceField(FormStructure, required=True)  # Reference to FormStructure
+    form_structure = me.ReferenceField(FormStructure, required=True)
+    form_structure_column = me.StringField(max_length=50, required=True)  # Stores key_name of FormStructureColumn
     create_date = me.DateTimeField(default=lambda: datetime.now(timezone.utc))
     user = me.ReferenceField(CustomUser, required=True)
     content = me.StringField(max_length=250, required=True)
@@ -126,9 +126,8 @@ class FormRecordCell(me.Document):
 
     meta = {
         'collection': 'form_record_cells',
-        'indexes': ['form_record', 'form_structure_column', 'user', 'create_date']
+        'indexes': ['form_record', 'form_structure', 'form_structure_column', 'user', 'create_date']
     }
-
 
 class UploadFile(me.Document):
     file_name = me.StringField(max_length=150, required=True)
@@ -144,6 +143,6 @@ class UploadFile(me.Document):
         'indexes': [
             {'fields': ['user']},
             {'fields': ['form_structure']},
-            {'fields': ['upload_date'], 'expireAfterSeconds': 30 * 24 * 60 * 60}  # TTL index: expire after 30 days
+            {'fields': ['upload_date'], 'expireAfterSeconds': 30 * 24 * 60 * 60}
         ]
     }
