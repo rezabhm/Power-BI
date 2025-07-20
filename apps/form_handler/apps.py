@@ -10,8 +10,8 @@ class FormHandlerConfig(AppConfig):
     name = 'apps.form_handler'
 
     def ready(self):
-        mongodb_settings = settings.MONGODB_SETTINGS
-        connect(**mongodb_settings)
+        # mongodb_settings = settings.MONGODB_SETTINGS
+        # connect(**mongodb_settings)
 
         # mongoDB signals
         setup_signals()

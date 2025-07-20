@@ -58,8 +58,8 @@ SIMPLE_JWT = {
 
 # MongoDB Configs
 MONGODB_SETTINGS = {
-    "db": "PowerBI_2",
-    "host": "mongodb://localhost:27017/PowerBI_2",
+    "db": "power_bi_2",
+    "host": "mongodb://localhost:27017/power_bi_2",
 }
 
 # Redis Configs

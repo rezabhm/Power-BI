@@ -142,8 +142,8 @@ class UploadFile(me.Document):
     meta = {
         'collection': 'upload_files',
         'indexes': [
-            'user',
-            'form_structure',
-            {'key': 'upload_date', 'expireAfterSeconds': 30 * 24 * 60 * 60}  # TTL index: expire after 30 days
+            {'fields': ['user']},
+            {'fields': ['form_structure']},
+            {'fields': ['upload_date'], 'expireAfterSeconds': 30 * 24 * 60 * 60}  # TTL index: expire after 30 days
         ]
     }
