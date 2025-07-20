@@ -1,3 +1,4 @@
+import mongomock
 from django.test import TestCase
 from mongoengine import connect, disconnect
 from apps.form_handler.documents import (
@@ -17,8 +18,11 @@ class DocumentTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        connect('testdb', host='mongomock://localhost')
-
+        connect(
+            db='testdb',
+            host='mongodb://localhost',
+            mongo_client_class=mongomock.MongoClient
+        )
     @classmethod
     def tearDownClass(cls):
         disconnect()

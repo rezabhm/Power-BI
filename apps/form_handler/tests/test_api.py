@@ -1,3 +1,4 @@
+import mongomock
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -18,7 +19,11 @@ class APITestCaseBase(APITestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        connect('testdb', host='mongomock://localhost')
+        connect(
+            db='testdb',
+            host='mongodb://localhost',
+            mongo_client_class=mongomock.MongoClient
+        )
 
     @classmethod
     def tearDownClass(cls):
