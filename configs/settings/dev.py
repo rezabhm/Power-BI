@@ -1,29 +1,29 @@
 from datetime import timedelta
-
+import os
 from configs.settings.base import *
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',  # استفاده از PostgreSQL
-        'NAME': 'PowerBI_2',  # نام دیتابیس PostgreSQL
-        'USER': 'postgres',  # نام کاربری دیتابیس
-        'PASSWORD': 'rezabhm:1290',  # رمز عبور دیتابیس
-        'HOST': 'localhost',  # آدرس سرور دیتابیس (localhost برای دیتابیس محلی)
-        'PORT': '5432',  # پورت دیتابیس (پورت پیش‌فرض PostgreSQL)
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('POSTGRES_HOST'),
+        'PORT': os.getenv('POSTGRES_PORT'),
     }
 }
 
 
 # Cors headers Config
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -43,10 +43,7 @@ CORS_ALLOW_METHODS = [
     "OPTIONS",
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Example: React frontend
-    # "https://your-production-domain.com",
-]
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
 
 # JWT Authentication Configs
 SIMPLE_JWT = {
@@ -58,15 +55,15 @@ SIMPLE_JWT = {
 
 # MongoDB Configs
 MONGODB_SETTINGS = {
-    "db": "power_bi_2",
-    "host": "mongodb://localhost:27017/power_bi_2",
+    "db": os.getenv('MONGO_DB'),
+    "host": f"mongodb://{os.getenv('MONGO_HOST')}:{os.getenv('MONGO_PORT')}/{os.getenv('MONGO_DB')}",
 }
 
 # Redis Configs
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": f"redis://{os.getenv('REDIS_HOST')}:{os.getenv('REDIS_PORT')}/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
