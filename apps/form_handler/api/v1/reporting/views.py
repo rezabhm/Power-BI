@@ -1,20 +1,53 @@
 from collections import Counter
 
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import mixins, status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.viewsets import GenericViewSet
-from rest_framework import mixins
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.viewsets import GenericViewSet
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from apps.form_handler.documents import FormStructure, Form, FormRecord, FormRecordCell
 from apps.form_handler.serializers import FormSerializer
 from apps.form_handler.utils.time_handler import jalali_to_gregorian
 
 
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_summary='Get filter configuration for a form structure',
+    tags=['form_handler.reporting'],
+    manual_parameters=[
+        openapi.Parameter('form-structure', openapi.IN_QUERY, description="ID of the form structure",
+                          type=openapi.TYPE_STRING)],
+    responses={
+        200: openapi.Response('Filter configuration', schema=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'filter-config': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(
+                        type=openapi.TYPE_OBJECT,
+                        properties={
+                            'type': openapi.Schema(type=openapi.TYPE_STRING, enum=['int', 'str', 'float']),
+                            'key_name': openapi.Schema(type=openapi.TYPE_STRING),
+                            'name': openapi.Schema(type=openapi.TYPE_STRING),
+                            'column_id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                            'condition_type': openapi.Schema(type=openapi.TYPE_STRING,
+                                                             enum=['gte', 'lte', 'gt', 'lt']),
+                            'condition_int': openapi.Schema(type=openapi.TYPE_INTEGER),
+                            'content_list': openapi.Schema(type=openapi.TYPE_ARRAY,
+                                                           items=openapi.Schema(type=openapi.TYPE_STRING))
+                        }
+                    )
+                )
+            }
+        )),
+        400: 'Invalid form structure ID'
+    }
+))
 class FilterConfigViewSet(GenericViewSet, mixins.ListModelMixin):
     """
     ViewSet for retrieving filter configuration for a FormStructure
-    دریافت تنظیمات فیلتر برای ساختار فرم
     """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -85,13 +118,53 @@ class FilterConfigViewSet(GenericViewSet, mixins.ListModelMixin):
 
         return Response({'filter-config': filter_config}, status=status.HTTP_200_OK)
 
+
+@method_decorator(name='create', decorator=swagger_auto_schema(
+    operation_summary='Generate a report based on a form structure and filters',
+    tags=['form_handler.reporting'],
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'form-structure': openapi.Schema(type=openapi.TYPE_STRING, description='ID of the form structure'),
+            'data-from': openapi.Schema(type=openapi.TYPE_STRING, description='Start date (Jalali)'),
+            'data-to': openapi.Schema(type=openapi.TYPE_STRING, description='End date (Jalali)'),
+            'filter': openapi.Schema(
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'type': openapi.Schema(type=openapi.TYPE_STRING, enum=['int', 'str', 'float']),
+                        'key_name': openapi.Schema(type=openapi.TYPE_STRING),
+                        'condition_type': openapi.Schema(type=openapi.TYPE_STRING, enum=['gte', 'lte', 'gt', 'lt']),
+                        'condition_int': openapi.Schema(type=openapi.TYPE_NUMBER),
+                        'condition_str_list': openapi.Schema(type=openapi.TYPE_ARRAY,
+                                                               items=openapi.Schema(type=openapi.TYPE_STRING))
+                    }
+                )
+            )
+        },
+        required=['form-structure', 'filter']
+    ),
+    responses={
+        200: openapi.Response('Report data', schema=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'form-data': FormSerializer(many=True),
+                'form-structure-data': openapi.Schema(
+                    type=openapi.TYPE_ARRAY,
+                    items=openapi.Schema(type=openapi.TYPE_OBJECT)
+                )
+            }
+        )),
+        400: 'Invalid input data'
+    }
+))
 class FormStructureReportingViewSet(GenericViewSet, mixins.CreateModelMixin):
     """
     ViewSet for generating reports based on FormStructure and filters
-    تولید گزارش بر اساس ساختار فرم و فیلترها
     """
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]  # Changed from AllowAny for consistency
+    permission_classes = [IsAuthenticated]
     serializer_class = FormSerializer
 
     def create(self, request, *args, **kwargs):
