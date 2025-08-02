@@ -1,15 +1,43 @@
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.viewsets import GenericViewSet
-from rest_framework import mixins
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.response import Response
-from rest_framework import status
+from django.utils.decorators import method_decorator
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import mixins, status
 from rest_framework.parsers import MultiPartParser, FormParser
-import pandas as pd
-from apps.form_handler.utils.detectFormStructure import detect_form_structure
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
 from apps.form_handler.serializers import *
+from apps.form_handler.utils.detectFormStructure import detect_form_structure
 
 
+@method_decorator(name='create', decorator=swagger_auto_schema(
+    operation_summary='Upload an excel file to create forms and records',
+    tags=['form_handler.upload_file'],
+    manual_parameters=[
+        openapi.Parameter(
+            'file',
+            openapi.IN_FORM,
+            description="Excel file to upload",
+            type=openapi.TYPE_FILE,
+            required=True
+        )
+    ],
+    responses={
+        200: openapi.Response('File uploaded successfully', schema=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={'message': openapi.Schema(type=openapi.TYPE_STRING)}
+        )),
+        400: 'Bad request (e.g., no file, invalid file, duplicate file)'
+    },
+    consumes=['multipart/form-data']
+))
+@method_decorator(name='list', decorator=swagger_auto_schema(
+    operation_summary='List all uploaded files for the current user',
+    tags=['form_handler.upload_file'],
+    responses={200: UploadFileSerializer(many=True)}
+))
 class UploadFileViewSet(
     GenericViewSet,
     mixins.ListModelMixin,
@@ -17,7 +45,6 @@ class UploadFileViewSet(
 ):
     """
     ViewSet for UploadFile operations
-    عملیات برای آپلود و لیست فایل‌ها
     """
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -69,7 +96,8 @@ class UploadFileViewSet(
             if not form_serializer.is_valid():
                 for obj in used_objects:
                     obj.delete()
-                return Response({'message': 'خطا در ایجاد فرم', 'errors': form_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'خطا در ایجاد فرم', 'errors': form_serializer.errors},
+                                status=status.HTTP_400_BAD_REQUEST)
             form = form_serializer.save()
             used_objects.append(form)
 
@@ -102,7 +130,8 @@ class UploadFileViewSet(
                         for obj in used_objects:
                             obj.delete()
                         return Response(
-                            {'message': 'فایل ارسالی صحیح نیست. لطفاً اشکالات فایل را مطابق ساختار فرم انتخابی اصلاح کنید و دوباره ارسال کنید'},
+                            {
+                                'message': 'فایل ارسالی صحیح نیست. لطفاً اشکالات فایل را مطابق ساختار فرم انتخابی اصلاح کنید و دوباره ارسال کنید'},
                             status=status.HTTP_400_BAD_REQUEST
                         )
 
@@ -117,7 +146,9 @@ class UploadFileViewSet(
                     if not record_cell_serializer.is_valid():
                         for obj in used_objects:
                             obj.delete()
-                        return Response({'message': 'خطا در ایجاد سلول رکورد', 'errors': record_cell_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response(
+                            {'message': 'خطا در ایجاد سلول رکورد', 'errors': record_cell_serializer.errors},
+                            status=status.HTTP_400_BAD_REQUEST)
                     record_cell = record_cell_serializer.save()
                     used_objects.append(record_cell)
 
@@ -131,7 +162,8 @@ class UploadFileViewSet(
             if not uploaded_file_serializer.is_valid():
                 for obj in used_objects:
                     obj.delete()
-                return Response({'message': 'خطا در ذخیره فایل آپلودشده', 'errors': uploaded_file_serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'خطا در ذخیره فایل آپلودشده', 'errors': uploaded_file_serializer.errors},
+                                status=status.HTTP_400_BAD_REQUEST)
             uploaded_file = uploaded_file_serializer.save()
             used_objects.append(uploaded_file)
 
