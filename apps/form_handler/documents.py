@@ -1,148 +1,186 @@
-import mongoengine as me
 from datetime import datetime, timezone
+import mongoengine as me
+from mongoengine import fields
 
-class CustomUser(me.Document):
-    username = me.StringField(max_length=150, required=True, unique=True)
-    email = me.StringField(max_length=254, required=False, unique=True)
-    is_active = me.BooleanField(default=True)
-    is_staff = me.BooleanField(default=False)
-    is_superuser = me.BooleanField(default=False)
-    date_joined = me.DateTimeField(default=lambda: datetime.now(timezone.utc))
-    roles = me.ListField(me.StringField(), default=[])
+from apps.core.documents import CustomUser
 
-    def __str__(self):
-        return self.username
-
-    meta = {
-        'collection': 'users',
-        'indexes': [
-            {
-                'fields': ['username'],
-                'unique': True,
-                'name': 'unique_username_index'
-            },
-            {
-                'fields': ['email'],
-                'unique': True,
-                'name': 'unique_email_index'
-            }
-        ]
-    }
 
 class FolderType(me.Document):
-    type_name = me.StringField(max_length=50, required=True)
+    """
+    Defines types for categorizing folders.
+    """
+    type_name = fields.StringField(max_length=50, required=True, unique=True)
 
     def __str__(self):
+        """Returns the type_name as the string representation."""
         return self.type_name
 
     meta = {
         'collection': 'folder_types',
-        'indexes': ['type_name']
+        'indexes': [
+            {'fields': ['type_name'], 'unique': True, 'name': 'unique_type_name_idx'}
+        ]
     }
 
 class Folder(me.Document):
-    name = me.StringField(max_length=50, required=True)
-    create_date = me.DateTimeField(default=lambda: datetime.now(timezone.utc))
-    folder_owner = me.ReferenceField(CustomUser, required=True)
-    folder_type = me.ReferenceField(FolderType, required=True)
+    """
+    Represents a folder for organizing form structures, owned by a user and categorized by type.
+    """
+    name = fields.StringField(max_length=50, required=True)
+    create_date = fields.DateTimeField(default=lambda: datetime.now(timezone.utc))
+    folder_owner = fields.ReferenceField(CustomUser, required=True, reverse_delete_rule=me.CASCADE)
+    folder_type = fields.ReferenceField(FolderType, required=True, reverse_delete_rule=me.CASCADE)
 
     def __str__(self):
+        """Returns the folder name as the string representation."""
         return self.name
 
     meta = {
         'collection': 'folders',
-        'indexes': ['folder_owner', 'folder_type', 'create_date']
+        'indexes': [
+            {'fields': ['folder_owner', 'name'], 'unique': True, 'name': 'unique_folder_owner_name_idx'},
+            {'fields': ['folder_type']},
+            {'fields': ['create_date']}
+        ],
+        'ordering': ['-create_date']
     }
 
 class FormStructureColumn(me.EmbeddedDocument):
-    key_name = me.StringField(max_length=50, required=True)
-    title = me.StringField(max_length=50, required=True)
-    excel_column_name = me.StringField(max_length=50, default='column')
-    content_type = me.StringField(max_length=20, default='str', choices=['str', 'int', 'bool', 'float', 'date'])
+    """
+    Embedded document representing a column in a form structure with metadata for data processing.
+    """
+    key_name = fields.StringField(max_length=50, required=True)
+    title = fields.StringField(max_length=50, required=True)
+    excel_column_name = fields.StringField(max_length=50, default='column')
+    content_type = fields.StringField(max_length=20, default='str', choices=['str', 'int', 'bool', 'float', 'date'])
 
     def __str__(self):
+        """Returns the column title as the string representation."""
         return self.title
 
 class FormStructureSpecifications(me.EmbeddedDocument):
-    name = me.StringField(max_length=50, required=True)
-    content = me.StringField(max_length=50, required=True)
+    """
+    Embedded document for additional specifications of a form structure.
+    """
+    name = fields.StringField(max_length=50, required=True)
+    content = fields.StringField(max_length=50, required=True)
 
     def __str__(self):
+        """Returns the specification name as the string representation."""
         return self.name
 
 class FormStructure(me.Document):
-    structure_name = me.StringField(max_length=50, required=True)
-    create_date = me.DateTimeField(default=lambda: datetime.now(timezone.utc))
-    folder = me.ReferenceField(Folder, required=True)
-    record_num = me.IntField(default=0)
-    columns = me.ListField(me.EmbeddedDocumentField(FormStructureColumn), default=[])
-    specifications = me.ListField(me.EmbeddedDocumentField(FormStructureSpecifications), default=[])
+    """
+    Represents the structure of a form, including columns and specifications, linked to a folder.
+    """
+    structure_name = fields.StringField(max_length=50, required=True)
+    create_date = fields.DateTimeField(default=lambda: datetime.now(timezone.utc))
+    folder = fields.ReferenceField(Folder, required=True, reverse_delete_rule=me.CASCADE)
+    record_num = fields.IntField(default=0, min_value=0)
+    columns = fields.ListField(fields.EmbeddedDocumentField(FormStructureColumn), default=list)
+    specifications = fields.ListField(fields.EmbeddedDocumentField(FormStructureSpecifications), default=list)
 
     def __str__(self):
+        """Returns the structure name as the string representation."""
         return self.structure_name
 
     meta = {
         'collection': 'form_structures',
-        'indexes': ['folder', 'create_date']
+        'indexes': [
+            {'fields': ['folder', 'structure_name'], 'unique': True, 'name': 'unique_folder_structure_idx'},
+            {'fields': ['create_date']}
+        ],
+        'ordering': ['-create_date']
     }
 
 class Form(me.Document):
-    form_structure = me.ReferenceField(FormStructure, required=True)
-    user = me.ReferenceField(CustomUser, required=True)
-    create_date = me.DateTimeField(default=lambda: datetime.now(timezone.utc))
-    form_name = me.StringField(max_length=150, default='file')
+    """
+    Represents a form instance linked to a form structure and created by a user.
+    """
+    form_structure = fields.ReferenceField(FormStructure, required=True, reverse_delete_rule=me.CASCADE)
+    user = fields.ReferenceField(CustomUser, required=True, reverse_delete_rule=me.CASCADE)
+    create_date = fields.DateTimeField(default=lambda: datetime.now(timezone.utc))
+    form_name = fields.StringField(max_length=150, default='file')
 
     def __str__(self):
+        """Returns the form ID as the string representation."""
         return str(self.id)
 
     meta = {
         'collection': 'forms',
-        'indexes': ['form_structure', 'user', 'create_date']
+        'indexes': [
+            {'fields': ['form_structure', 'user']},
+            {'fields': ['create_date']}
+        ],
+        'ordering': ['-create_date']
     }
 
 class FormRecord(me.Document):
-    form = me.ReferenceField(Form, required=True)
-    create_date = me.DateTimeField(default=lambda: datetime.now(timezone.utc))
-    user = me.ReferenceField(CustomUser, required=True)
+    """
+    Represents a single record within a form, created by a user.
+    """
+    form = fields.ReferenceField(Form, required=True, reverse_delete_rule=me.CASCADE)
+    create_date = fields.DateTimeField(default=lambda: datetime.now(timezone.utc))
+    user = fields.ReferenceField(CustomUser, required=True, reverse_delete_rule=me.CASCADE)
 
     def __str__(self):
+        """Returns the record ID as the string representation."""
         return str(self.id)
 
     meta = {
         'collection': 'form_records',
-        'indexes': ['form', 'user', 'create_date']
+        'indexes': [
+            {'fields': ['form', 'user']},
+            {'fields': ['create_date']}
+        ],
+        'ordering': ['-create_date']
     }
 
 class FormRecordCell(me.Document):
-    form_record = me.ReferenceField(FormRecord, required=True)
-    form_structure = me.ReferenceField(FormStructure, required=True)
-    form_structure_column = me.StringField(max_length=50, required=True)  # Stores key_name of FormStructureColumn
-    create_date = me.DateTimeField(default=lambda: datetime.now(timezone.utc))
-    user = me.ReferenceField(CustomUser, required=True)
-    content = me.StringField(max_length=250, required=True)
+    """
+    Represents a single cell within a form record, linked to a form structure column.
+    """
+    form_record = fields.ReferenceField(FormRecord, required=True, reverse_delete_rule=me.CASCADE)
+    form_structure = fields.ReferenceField(FormStructure, required=True, reverse_delete_rule=me.CASCADE)
+    form_structure_column = fields.StringField(max_length=50, required=True)
+    create_date = fields.DateTimeField(default=lambda: datetime.now(timezone.utc))
+    user = fields.ReferenceField(CustomUser, required=True, reverse_delete_rule=me.CASCADE)
+    content = fields.StringField(max_length=250, required=True)
 
     def __str__(self):
+        """Returns the cell ID as the string representation."""
         return str(self.id)
 
     meta = {
         'collection': 'form_record_cells',
-        'indexes': ['form_record', 'form_structure', 'form_structure_column', 'user', 'create_date']
+        'indexes': [
+            {'fields': ['form_record', 'form_structure_column']},
+            {'fields': ['form_structure']},
+            {'fields': ['user']},
+            {'fields': ['create_date']}
+        ],
+        'ordering': ['-create_date']
     }
 
 class UploadFile(me.Document):
-    file_name = me.StringField(max_length=150, required=True)
-    upload_date = me.DateTimeField(default=lambda: datetime.now(timezone.utc))
-    user = me.ReferenceField(CustomUser, required=True)
-    form_structure = me.ReferenceField(FormStructure, default=None)
+    """
+    Represents an uploaded file associated with a form structure and user, with automatic expiration.
+    """
+    file_name = fields.StringField(max_length=150, required=True)
+    upload_date = fields.DateTimeField(default=lambda: datetime.now(timezone.utc))
+    user = fields.ReferenceField(CustomUser, required=True, reverse_delete_rule=me.CASCADE)
+    form_structure = fields.ReferenceField(FormStructure, required=False, reverse_delete_rule=me.NULLIFY)
 
     def __str__(self):
+        """Returns the file name as the string representation."""
         return self.file_name
 
     meta = {
         'collection': 'upload_files',
         'indexes': [
-            {'fields': ['user']},
+            {'fields': ['user', 'file_name'], 'unique': True, 'name': 'unique_user_file_idx'},
             {'fields': ['form_structure']},
             {'fields': ['upload_date'], 'expireAfterSeconds': 30 * 24 * 60 * 60}
-        ]
+        ],
+        'ordering': ['-upload_date']
     }

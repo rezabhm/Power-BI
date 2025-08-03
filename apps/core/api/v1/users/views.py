@@ -23,4 +23,4 @@ class UserAPIView(
     serializer_class = UserSerializer
 
     def get_queryset(self):
-        return User.objects.all()
+        return User.objects.all(username=self.request.user.username)

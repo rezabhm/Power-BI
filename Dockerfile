@@ -1,22 +1,22 @@
-# Use an official Python runtime as a parent image
-FROM python:3.12-slim
+# Base image
+FROM python
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Set work directory
+# Set working directory
 WORKDIR /app
 
 # Install dependencies
-COPY requirements.txt /app/
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
-COPY . /app/
+# Copy project files
+COPY . .
 
-# Expose port 8000
-EXPOSE 8000
+# Give execution permission to entrypoint
+RUN chmod +x entrypoint.sh
 
-# Run the application
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Run entrypoint as default command
+CMD ["./entrypoint.sh"]
