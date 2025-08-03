@@ -151,24 +151,19 @@ class FormStructureColumnViewSet(
     serializer_class = FormStructureColumnSerializer
     lookup_field = 'pk'
 
-    def get_form_structure(self):
-        """
-        Retrieves FormStructure by ID from URL kwargs, raises Http404 if not found.
-        """
-        return FormStructure.objects.get(id=self.kwargs.get("form_structure_id"))
 
     def get_queryset(self):
         """
         Returns columns associated with the specified FormStructure.
         """
-        form_structure = self.get_form_structure()
-        return form_structure.columns
+        return FormStructure.objects(id=self.kwargs.get("form_structure_id"))
+
 
     def perform_create(self, serializer):
         """
         Creates a new column and appends it to the FormStructure's columns list.
         """
-        form_structure = self.get_form_structure()
+        form_structure = self.get_queryset()
         column = serializer.save()
         form_structure.columns.append(column)
         form_structure.save()
@@ -178,7 +173,7 @@ class FormStructureColumnViewSet(
         Retrieves a specific column by index from FormStructure's columns list.
         Raises Http404 if index is invalid.
         """
-        form_structure = self.get_form_structure()
+        form_structure = self.get_queryset()
         try:
             return form_structure.columns[int(self.kwargs.get('pk'))]
         except (IndexError, ValueError):
@@ -188,7 +183,7 @@ class FormStructureColumnViewSet(
         """
         Updates a column and saves the parent FormStructure.
         """
-        form_structure = self.get_form_structure()
+        form_structure = self.get_queryset()
         serializer.save()
         form_structure.save()
 
@@ -196,7 +191,7 @@ class FormStructureColumnViewSet(
         """
         Deletes a column from FormStructure's columns list and saves the parent.
         """
-        form_structure = self.get_form_structure()
+        form_structure = self.get_queryset()
         serializer = self.get_serializer(instance)
         serializer.delete(instance, form_structure)
 
@@ -220,24 +215,17 @@ class FormStructureSpecificationViewSet(
     serializer_class = FormStructureSpecificationsSerializer
     lookup_field = 'pk'
 
-    def get_form_structure(self):
-        """
-        Retrieves FormStructure by ID from URL kwargs, raises Http404 if not found.
-        """
-        return FormStructure.objects.get(id=self.kwargs.get("form_structure_id"))
-
     def get_queryset(self):
         """
         Returns specifications associated with the specified FormStructure.
         """
-        form_structure = self.get_form_structure()
-        return form_structure.specifications
+        return FormStructure.objects(id=self.kwargs.get("form_structure_id"))
 
     def perform_create(self, serializer):
         """
         Creates a new specification and appends it to the FormStructure's specifications list.
         """
-        form_structure = self.get_form_structure()
+        form_structure = self.get_queryset()
         specification = serializer.save()
         form_structure.specifications.append(specification)
         form_structure.save()
@@ -247,7 +235,7 @@ class FormStructureSpecificationViewSet(
         Retrieves a specific specification by index from FormStructure's specifications list.
         Raises Http404 if index is invalid.
         """
-        form_structure = self.get_form_structure()
+        form_structure = self.get_queryset()
         try:
             return form_structure.specifications[int(self.kwargs.get('pk'))]
         except (IndexError, ValueError):
@@ -257,7 +245,7 @@ class FormStructureSpecificationViewSet(
         """
         Updates a specification and saves the parent FormStructure.
         """
-        form_structure = self.get_form_structure()
+        form_structure = self.get_queryset()
         serializer.save()
         form_structure.save()
 
@@ -265,7 +253,7 @@ class FormStructureSpecificationViewSet(
         """
         Deletes a specification from FormStructure's specifications list and saves the parent.
         """
-        form_structure = self.get_form_structure()
+        form_structure = self.get_queryset()
         serializer = self.get_serializer(instance)
         serializer.delete(instance, form_structure)
 

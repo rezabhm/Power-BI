@@ -8,6 +8,7 @@ from apps.form_handler.signals import setup_signals
 class FormHandlerConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'apps.form_handler'
+    label = 'form_handler'
 
     def ready(self):
         mongodb_settings = settings.MONGODB_SETTINGS

@@ -88,7 +88,8 @@ form_structure_reporting_create_swagger = swagger_auto_schema(
             schema=openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'form-data': openapi.Schema(type=openapi.TYPE_ARRAY, items=FormSerializer),
+                    'form-data': openapi.Schema(type=openapi.TYPE_ARRAY,
+                                                items=openapi.Items(type=openapi.TYPE_OBJECT)),
                     'form-structure-data': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Schema(type=openapi.TYPE_STRING)))
                 }
             )

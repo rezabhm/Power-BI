@@ -13,6 +13,7 @@ router.register(r'form-structures/(?P<form_structure_id>[^/.]+)/specifications',
 router.register(r'forms', FormViewSet, basename='form')
 router.register(r'form-records', FormRecordViewSet, basename='form-record')
 router.register(r'form-record-cells', FormRecordCellViewSet, basename='form-record-cell')
+
 router.register(r'upload-files', UploadFileViewSet, basename='upload-file')
 router.register(r'filter-config', FilterConfigViewSet, basename='filter-config')
 router.register(r'form-structure-reporting', FormStructureReportingViewSet, basename='form-structure-reporting')

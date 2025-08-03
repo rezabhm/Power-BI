@@ -1,6 +1,6 @@
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from apps.form_handler.serializers import UploadFileSerializer
+from apps.form_handler.serializers import UploadFileSerializer, UploadExcelFileSerializer
 
 upload_file_list_swagger = swagger_auto_schema(
     operation_summary='List Uploaded Files',
@@ -23,13 +23,7 @@ upload_file_create_swagger = swagger_auto_schema(
         'Returns a success message or error details if the file is invalid or processing fails.'
     ),
     tags=['form_handler.upload_file'],
-    request_body=openapi.Schema(
-        type=openapi.TYPE_OBJECT,
-        properties={
-            'file': openapi.Schema(type=openapi.TYPE_FILE, description='Excel file to upload.')
-        },
-        required=['file']
-    ),
+    request_body=UploadExcelFileSerializer,
     responses={
         200: openapi.Response(
             description='File upload completed successfully.',
