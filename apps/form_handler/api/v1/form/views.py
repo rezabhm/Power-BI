@@ -155,17 +155,14 @@ class FormStructureColumnViewSet(
         """
         Retrieves FormStructure by ID from URL kwargs, raises Http404 if not found.
         """
-        form_structure_id = self.kwargs.get('form_structure_id')
-        try:
-            return FormStructure.objects.get(id=form_structure_id)
-        except FormStructure.DoesNotExist:
-            raise Http404("FormStructure not found")
+        return FormStructure.objects.get(id=self.kwargs.get("form_structure_id"))
 
     def get_queryset(self):
         """
         Returns columns associated with the specified FormStructure.
         """
-        return self.get_form_structure().columns
+        form_structure = self.get_form_structure()
+        return form_structure.columns
 
     def perform_create(self, serializer):
         """
@@ -227,17 +224,14 @@ class FormStructureSpecificationViewSet(
         """
         Retrieves FormStructure by ID from URL kwargs, raises Http404 if not found.
         """
-        form_structure_id = self.kwargs.get('form_structure_id')
-        try:
-            return FormStructure.objects.get(id=form_structure_id)
-        except FormStructure.DoesNotExist:
-            raise Http404("FormStructure not found")
+        return FormStructure.objects.get(id=self.kwargs.get("form_structure_id"))
 
     def get_queryset(self):
         """
         Returns specifications associated with the specified FormStructure.
         """
-        return self.get_form_structure().specifications
+        form_structure = self.get_form_structure()
+        return form_structure.specifications
 
     def perform_create(self, serializer):
         """

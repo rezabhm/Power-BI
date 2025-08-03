@@ -21,6 +21,7 @@ class UserAPIView(
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
+    queryset = User.objects.all()
 
     def get_queryset(self):
-        return User.objects.all(username=self.request.user.username)
+        return self.queryset.filter(username=self.request.user.username)

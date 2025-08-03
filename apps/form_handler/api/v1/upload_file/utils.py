@@ -2,7 +2,7 @@ import pandas as pd
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status
 from rest_framework.response import Response
-from apps.form_handler.models import UploadFile, FormStructure
+from apps.form_handler.documents import UploadFile, FormStructure
 from apps.form_handler.serializers import UploadFileSerializer, FormSerializer, FormRecordSerializer, FormRecordCellSerializer
 from apps.form_handler.utils.detectFormStructure import detect_form_structure
 
